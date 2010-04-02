@@ -238,8 +238,11 @@ void MifConvIconBinaryConverter::RunExtConverter()
         // enclosed with quotation marks. If the whole string is enclosed with quotation marks then it works...
         // For example: command '"\epoc32\tools\bmconv" "somefile"' does not work while command
         // '""\epoc32\tools\bmconv" "somefile""' does.
+        cout << "Mifconvdebugging - executing" << MifConvString("\""+extConverterCommand+"\""+to+"\"\"").c_str() << endl;
+
         if( system(MifConvString("\""+extConverterCommand+"\""+to+"\"\"").c_str()) < 0 )
         {
+            cout << "Mifconvdebugging - failed to execute" << MifConvString("\""+extConverterCommand+"\""+to+"\"\"").c_str() << endl;
             int ernro = errno;  // The error number must check straight away before any next system command
             
             MifConvString errStr("Executing SVGTBINENCODE failed");
