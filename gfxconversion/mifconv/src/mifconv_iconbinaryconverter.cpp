@@ -247,7 +247,7 @@ void MifConvIconBinaryConverter::RunExtConverter()
         // Build temp filename by replacing dir separator and ':' chars with '_':
         MifConvString tmpFileName(i->Filename());
         ConvertToBinaryFilename(tmpFileName);
-       
+
         // Copy source file to temp directory:
         MifConvString to(iTempDir + tmpFileName);        
         if( MifConvUtil::CopyFile(i->Filename(), to) == false )
@@ -259,9 +259,11 @@ void MifConvIconBinaryConverter::RunExtConverter()
         // enclosed with quotation marks. If the whole string is enclosed with quotation marks then it works...
         // For example: command '"\epoc32\tools\bmconv" "somefile"' does not work while command
         // '""\epoc32\tools\bmconv" "somefile""' does.
-               
+        cout << "Mifconvdebugging - executing" << MifConvString("\""+extConverterCommand+"\""+to+"\"\"").c_str() << endl;
+
         if( system(MifConvString("\""+extConverterCommand+"\""+to+"\"\"").c_str()) < 0 )
         {
+            cout << "Mifconvdebugging - failed to execute" << MifConvString("\""+extConverterCommand+"\""+to+"\"\"").c_str() << endl;
             int ernro = errno;  // The error number must check straight away before any next system command
             
             MifConvString errStr("Executing SVGTBINENCODE failed");
