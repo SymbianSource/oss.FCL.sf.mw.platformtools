@@ -1,7 +1,7 @@
 ===============================================================================
 
-RELEASE NOTES - MIFCONV v3.2.2
-RELEASED 28th April 2010 
+RELEASE NOTES - MIFCONV v3.3.0
+RELEASED 10th August 2010 
 
 SUPPORTS S60 3.2+
 
@@ -21,15 +21,19 @@ Main Features:
   ABLD build system and FLM syntax for SBSv2 build system
 - Generating MIF files from SVG/SVGB icon sources and BMP file ids
 - Converting SVG to SVGB with the Svgtbinencode utility
-- Generating MBM files (alternatively with Bmconv utility given with -B parameter)
+- Generating MBM files (alternatively with Bmconv utility given with -B
+  parameter)
 - Generating icon id enumeration MBG header files from the given source files
 
 ===============================================================================
 
-What's New in v3.2.2
+What's New in v3.3.0
 ====================
-- Fix: Mifconv now support the marking ".\" in front of a filename in Linux.
-- Fix: Mifconv now compiles correctly in Linux.
+- Change: Most of the FLM functionality is now in Python with speed
+  optimizations and dependency checks doesn't report false warnings anymore
+- Change: SBSv2 dependency is now version 2.13.0 or higher
+- Feature: Via FLM it is now possible to define Mifconv and Svgtbinencode
+  locations outside EPOCROOT
 
 ===============================================================================
 
@@ -44,6 +48,7 @@ System Requirements:
 ====================
 Basic Requirements:
 - Any S60 3.2 or higher RnD environment
+- SBSv2 2.13.0 or higher for SBSv2 compilation
 
 ===============================================================================
 
@@ -67,18 +72,23 @@ Known Issues:
 Version History:
 ================
 
+Version 3.2.2 - 28th April 2010
+-------------------------------
+- Fix: Mifconv now support the marking ".\" in front of a filename in Linux.
+- Fix: Mifconv now compiles correctly in Linux.
+
 Version 3.2.1 - 20th April 2010
-====================
-- Change: Added new default search directories for icon files.
+-------------------------------
+- Change: Added new default search directories for icon files
 
 Version 3.2.0 - 24th February 2010
-====================
+----------------------------------
 - Change: Removed dependencies to BMCONV tool by adding the BMCONV encoding 
   functionality as a part of MifConv functionality. External BMCONV tool can still 
   be used by giving -B parameter.
 
 Version 3.1.7 - 10th July 2009
-====================
+------------------------------
 - Fix: MIF-file is created also when no input files are given.
 - Fix: Correct build directory used with mifconv.flm.
 - Fix: MBM-file is included in RELEASABLES macro in mifconv.flm.

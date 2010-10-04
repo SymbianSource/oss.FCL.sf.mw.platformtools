@@ -42,5 +42,6 @@ PRJ_EXPORTS
   ../makefile_templates/mifconv.meta                          +/tools/makefile_templates/s60/mifconv.meta
   ../makefile_templates/mifconv.mk                            +/tools/makefile_templates/s60/mifconv.mk
   ../makefile_templates/mifconv.xml                           +/tools/makefile_templates/s60/mifconv.xml
+  ../bin/mifconv_wrapper.py                                   +/tools/mifconv_wrapper.py
 #endif
 

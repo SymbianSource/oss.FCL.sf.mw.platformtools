@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies). 
+# Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies). 
 # All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of "Eclipse Public License v1.0"
@@ -15,102 +15,70 @@
 # 
 #
 
-# Check if $/ variable has been defined, if not, then it is always /
-ifeq ($(strip $(/)),)
-    /:=/
-endif
+# run a script to call mifconv and svgtbinencode
 
-# Replace \ with / in EPOCROOT
-EPOCROOT:=$(subst \,/,$(EPOCROOT))
-# Make sure that EPOCROOT ends in /
-EPOCROOT:=$(patsubst %/,%,$(EPOCROOT))/
-# Replace / with $/ in EPOCROOT
-EPOCROOT:=$(subst /,$/,$(EPOCROOT))
+# only run once per TARGETFILE, but gather up all the requested PLATFORM + CFG
+# pairs so that the script can copy the target files to the other locations
+# required for different platforms.
 
-# Important initialise
-RELEASEABLES:=
+# note that TARGET_PLATFORMS is escaped in the macro so that it is not
+# expanded until the command runs, ensuring that it contains all the values.
 
-ifeq ($(SBS_BUILD_DIR),)
-VECTORINTERMEDIATEDIR:=$(EPOCROOT)epoc32$/build$/s60$/icons$/$(notdir $(basename $(TARGETFILE)))
+TARGET_PLATFORMS:=$(call sanitise,$(TARGETFILE)_mif)
+
+ifeq ($($(TARGET_PLATFORMS)),)
+$(TARGET_PLATFORMS):=$(PLATFORM) $(CFG)
+
+SCRIPT:=$(PYTHON) $(EPOCROOT)/epoc32/tools/mifconv_wrapper.py
+MANIFEST:=$(EPOCBLD)/$(TARGET_PLATFORMS)
+
+# macro to define rules for different phony targets
+#
+# run the script as a recipe, producing a manifest file as output.
+# then use the manifest file to generate the whatlog tags.
+#
+# $1 is BITMAP or CLEAN
+#
+define mifconvwrapper
+$1::
+	$(call startrule,mifconvwrapper,FORCESUCCESS) \
+	$(SCRIPT) \
+	  $(if $(FLMDEBUG),--debug="on") \
+	  --epocroot="$(EPOCROOT)" \
+	  --extroot="$(EXTENSION_ROOT)" \
+	  --make="$1" \
+	  --manifest="$(MANIFEST)" \
+	  --platforms="$$($(TARGET_PLATFORMS))" \
+	  $(if $(TARGETFILE),--target="$(TARGETFILE)") \
+	  $(if $(HEADERFILE),--header="$(HEADERFILE)") \
+	  $(if $(SOURCES),--sources="$(SOURCES)") \
+	  $(if $(SOURCEFILE),--sourcefile="$(SOURCEFILE)") \
+	  $(if $(SOURCEDIR),--sourcedir="$(SOURCEDIR)") \
+	  $(if $(SVGENCODINGVERSION),--svgversion="$(SVGENCODINGVERSION)") \
+	$(call endrule,mifconvwrapper)
+	$(call startrawoutput) \
+	echo "$(call whatLogOpen)" ; \
+	$(GNUCAT) $(MANIFEST) | \
+	(read -r LINE; while [ $$$$? -eq 0 ]; do \
+	echo "$(call whatLogItem,BITMAP,$$$$LINE)"; \
+	read -r LINE; done; ); \
+	echo "$(call whatLogClose)" \
+	$(call endrawoutput)
+	$(GNURM) $(MANIFEST)
+endef
+
+# if we are doing CLEAN or REALLYCLEAN then just include the CLEAN target,
+# otherwise just include the BITMAP target
+#
+ifeq ($(filter %CLEAN,$(call uppercase,$(MAKECMDGOALS))),)
+$(eval $(call mifconvwrapper,BITMAP))
 else
-VECTORINTERMEDIATEDIR:=$(SBS_BUILD_DIR)$/s60$/icons$/$(notdir $(basename $(TARGETFILE)))
+$(eval $(call mifconvwrapper,CLEAN))
 endif
 
-include $(EPOCROOT)epoc32$/tools$/makefile_templates$/s60$/mifconv_global_options.make
-include $(EPOCROOT)epoc32$/tools$/makefile_templates$/s60$/mifconv_step1.make
-include $(EPOCROOT)epoc32$/tools$/makefile_templates$/s60$/mifconv_step2.make
-include $(EPOCROOT)epoc32$/tools$/makefile_templates$/s60$/mifconv_option_reader.make
-include $(EPOCROOT)epoc32$/tools$/makefile_templates$/s60$/mifconv_step3.make
+else
+# this is an additional platform so append to the list
 
-ifeq ($(OSTYPE),unix) 
-MIFCONV:=$(MIFCONV)
-SVGTBINENCODE:=$(SVGTBINENCODE)
-else 
-MIFCONV:=$(MIFCONV)$(DOTEXE)
-SVGTBINENCODE:=$(SVGTBINENCODE)$(DOTEXE)
-endif
+$(TARGET_PLATFORMS)+=$(PLATFORM) $(CFG)
 
-ifeq ($(strip $(MIFCONVDEBUG)),1)
-$(info <TOOLCAT toolcat='$(TOOLCAT)'/>)
-$(info <TOOLCOPY toolcopy='$(TOOLCOPY)'/>)
-$(info <TOOLMKDIR toolmkdir='$(TOOLMKDIR)'/>)
-$(info <MIFCONV mifconv='$(MIFCONV)'/>)
-endif
-
-ifeq ($(strip $(MIFCONVDEBUG)),1)
-$(warning MIFCONVOPTS $(MIFCONVOPTS))
-endif
-
-# The groupsvgin10 macro allows us to construct a command file, 10 
-# svgs/bmps objects at a time to avoid limits on argument lengths and 
-# sizes on Windows.
-define groupsvgin10
-	$(if $1,$(shell echo -e $(foreach L,$(wordlist 1,10,$1),"$(L)\\n") >>$(PARAMFILE)),)
-	$(if $1,$(call groupsvgin10,$(wordlist 11,$(words $1),$1)),true)
-endef
-
-define generatemif
-
-TARGET_$(TARGETFILE):=1
-MIFCONVOPTS:=$(MIFCONVOPTS)
-BITMAPS:=$(addsuffix .bmp,$(BITMAPBASESOURCES))
-
-BITMAP:: $(BITMAPFILE) $(TARGETFILE)
-
-ifeq ($(INIT_CFG),$(PLATFORM)$(CFG))
-ifneq ($(HEADERFILE),)
-$(HEADERFILE): $(TARGETFILE)
-endif
-endif
-
-ifneq ($(BITMAPFILE),)
-$(BITMAPFILE): $(TARGETFILE)
-endif
-
-
-$(if $(HEADERFILE),$(shell echo -e "-h$(HEADERFILE)\n-e\n" >$(PARAMFILE)), $(shell echo -e "-e\n" >$(PARAMFILE)) )
-$(if $(SOURCEDIR),$(shell echo -e "-i$(SOURCEDIR)\n" >>$(PARAMFILE)),)
-
-$(call groupsvgin10, $(MIFCONVOPTS))
-
-$(TARGETFILE): $(SVGBFILES) $(MIFCONV) $(SVGTBINENCODE) $(BMPFILES) $(MASKFILES)
-	$(call startrule,mifcompile,FORCESUCCESS) \
-	$(MIFCONV) $(TARGETFILE) -f$(PARAMFILE) \
-	$(call endrule,mifcompile)
-
-endef
-
-ifeq ($(TARGET_$(TARGETFILE)),)
-$(eval $(call generatemif))
-endif
-
-%-erase :
-	-$(GNURM) $*
-
-# FLM specific block begins
-CLEAN CLEANMAKEFILE :: $(addsuffix -erase,$(wildcard $(TARGETFILE) $(HEADERFILE) $(BITMAPFILE) $(PARAMFILE) $(patsubst %b,%,$(SVGBFILES)) $(SVGBFILES)))
-# FLM specific block ends
-
-# for the abld -what target 
-RELEASEABLES:=$(TARGETFILE) $(HEADERFILE) $(BITMAPFILE)
-$(eval $(call whatmacro,$(RELEASEABLES),WHATBITMAP))
+endif # TARGET_PLATFORMS
