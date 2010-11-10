@@ -118,33 +118,45 @@ SYSTEMBMPFILES:=$(filter $(BITMAPSOURCEDIR)%,$(BMPFILES))
 
 # Copy SVG files in reverse order of priority to enabele overriding SVG files with lesser priority
 
-# Define the copy rules for VECTORSOURCESUBDIRs
 ifeq ($(INIT_CFG),$(PLATFORM)$(CFG))
+define test_for_redefinition
+
+STEP3_GUARD=TARGET_$(call sanitise,$(1))
+
+ifeq ($$($$(STEP3_GUARD)),)
+$$(STEP3_GUARD)=$(COMPONENT_META)
+else
+$$(warning warning: commands for $(1) redefined via $(COMPONENT_META) - originally via $$($$(STEP3_GUARD)))
+endif
+
+endef
+
+MIF_INTERMEDIATES=$(SYSTEMINTERMEDIATESVGFILES_OEM) $(SYSTEMINTERMEDIATESVGFILES_NOKIA) $(SYSTEMINTERMEDIATESVGFILES_NSS) $(SYSTEMINTERMEDIATESVGFILES)
+
+CODE_TO_TEST_FOR_REDEFINITION=$(foreach MIF_INTERMEDIATE,$(MIF_INTERMEDIATES),$(call test_for_redefinition,$(MIF_INTERMEDIATE)))
+
+$(eval $(CODE_TO_TEST_FOR_REDEFINITION))
+
+# Define the copy rules for VECTORSOURCESUBDIRs
 $(SYSTEMINTERMEDIATESVGFILES_OEM) : $(VECTORINTERMEDIATEDIR)% : $(VECTORSOURCESUBDIR_OEM)% 
 	$(TOOLCOPY) $< $@	
 ifeq ($(OSTYPE),cygwin)
 	$(GNUCHMOD) a+rw "$@"
 endif
-endif
 
-ifeq ($(INIT_CFG),$(PLATFORM)$(CFG))
 $(SYSTEMINTERMEDIATESVGFILES_NOKIA) : $(VECTORINTERMEDIATEDIR)% : $(VECTORSOURCESUBDIR_NOKIA)% 
 	$(TOOLCOPY) $< $@	
 ifeq ($(OSTYPE),cygwin)
 	$(GNUCHMOD) a+rw "$@"
 endif
-endif
 
-ifeq ($(INIT_CFG),$(PLATFORM)$(CFG))
 $(SYSTEMINTERMEDIATESVGFILES_NSS) : $(VECTORINTERMEDIATEDIR)% : $(VECTORSOURCESUBDIR_NSS)% 
 	$(TOOLCOPY) $< $@	
 ifeq ($(OSTYPE),cygwin)
 	$(GNUCHMOD) a+rw "$@"
 endif
-endif
 
 # Define the copy rule for VECTORSOURCEDIR
-ifeq ($(INIT_CFG),$(PLATFORM)$(CFG))
 $(SYSTEMINTERMEDIATESVGFILES) : $(VECTORINTERMEDIATEDIR)% : $(VECTORSOURCEDIR)% 
 	$(TOOLCOPY) $< $@	
 ifeq ($(OSTYPE),cygwin)
